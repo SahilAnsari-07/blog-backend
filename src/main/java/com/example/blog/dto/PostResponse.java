@@ -18,4 +18,5 @@ public class PostResponse {
     private String authorName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String imageUrl;
 }

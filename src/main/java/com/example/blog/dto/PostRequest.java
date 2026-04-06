@@ -13,4 +13,5 @@ public class PostRequest {
     private String title;
     private String content;
     private String status;
+    private String imageUrl;
 }

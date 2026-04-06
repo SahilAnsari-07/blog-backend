@@ -37,4 +37,8 @@ public class Post {
     private LocalDateTime createdAt;
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+
+    //delete the table if error occurs
+    private String imageUrl;
 }
