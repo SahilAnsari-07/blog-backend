@@ -6,12 +6,15 @@ import com.example.blog.dto.PostResponse;
 import com.example.blog.model.Post;
 import com.example.blog.model.User;
 import com.example.blog.service.PostService;
+import com.example.blog.service.S3Service;
 import com.example.blog.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,6 +25,7 @@ public class PostController {
 
     private final PostService postService;
     private final UserService userService;
+    private final S3Service s3Service;
 
     @PostMapping
     public ResponseEntity<?> createPost(@RequestBody PostRequest postRequest, Authentication authentication) {
@@ -143,10 +147,24 @@ public class PostController {
         if (!post.getUser().getEmail().equals(email)) {
             return ResponseEntity.status(403).body("You can only delete your own posts!");
         }
+        if (post.getImageUrl() != null){
+            s3Service.deleteFile(post.getImageUrl());
+        }
 
         postService.deletePost(id);
 
         return ResponseEntity.ok("Post deleted successfully!");
+    }
+
+    @PostMapping("/upload-image")
+    public ResponseEntity<?> uploadImage(@RequestParam("file")MultipartFile file){
+        try {
+            String imgUrl = s3Service.uploadFile(file);
+            return ResponseEntity.ok(imgUrl);
+        }catch (IOException e){
+            return ResponseEntity.status(500).body("Image upload Failed "+ e.getMessage());
+
+        }
     }
 
 
