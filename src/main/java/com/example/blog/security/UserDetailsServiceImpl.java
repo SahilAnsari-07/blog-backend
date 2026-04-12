@@ -23,7 +23,7 @@ public class UserDetailsServiceImpl implements UserDetailsService{
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getEmail())
                 .password(user.getPassword())
-                .authorities(user.getRole())
+                .authorities(user.getRole().name())
                 .build();
     }
 }

@@ -2,10 +2,7 @@ package com.example.blog.model;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -14,7 +11,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "posts")
 @Builder
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Post {
@@ -31,8 +29,16 @@ public class Post {
     private String title;
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private PostStatus status;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
+
     @CreationTimestamp
     private LocalDateTime createdAt;
     @UpdateTimestamp
