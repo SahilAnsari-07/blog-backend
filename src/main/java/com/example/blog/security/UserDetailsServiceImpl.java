@@ -4,7 +4,6 @@ package com.example.blog.security;
 import com.example.blog.model.User;
 import com.example.blog.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

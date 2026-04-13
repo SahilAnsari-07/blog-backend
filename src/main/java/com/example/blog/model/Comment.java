@@ -1,10 +1,12 @@
 package com.example.blog.model;
 
 import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+
 import java.time.LocalDateTime;
 
 @Getter
@@ -19,6 +21,7 @@ public class Comment {
     private String id;
 
     @Field("post_id")
+    @Indexed
     private Long postId;
 
     @Field("user_id")
@@ -28,8 +31,10 @@ public class Comment {
     private String username;
 
     private String body;
-
+    @Indexed
     private String parentId;
+
+
 
     @CreatedDate
     private LocalDateTime createdAt;

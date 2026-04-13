@@ -7,12 +7,9 @@ import com.example.blog.mapper.UserMapper;
 import com.example.blog.model.User;
 import com.example.blog.model.UserRole;
 import com.example.blog.repository.UserRepository;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.ui.ModelMap;
 
 import java.util.HashMap;
 import java.util.List;

@@ -52,9 +52,10 @@ public class AuthController {
                             loginRequest.getPassword()
                     )
             );
-            String token = jwtUtil.generateToken(loginRequest.getEmail());
+
             User user = userService.findByEmail(loginRequest.getEmail())
                     .orElseThrow(() -> new RuntimeException("User not found after authentication"));
+            String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
             JwtAuthResponse response = new JwtAuthResponse(token, user.getUserName(), user.getRole().name());
             return ResponseEntity.ok(response);
 

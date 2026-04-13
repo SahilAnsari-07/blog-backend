@@ -1,6 +1,8 @@
 package com.example.blog.dto;
 
+import com.example.blog.model.PostStatus;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Getter
@@ -14,7 +16,10 @@ public class PostRequest {
     @NotBlank
     private String content;
 
-    private String status;
+    private PostStatus status;
 
     private String imageUrl;
+
+    @NotNull(message = "Category ID is required")
+    private Long categoryId;
 }

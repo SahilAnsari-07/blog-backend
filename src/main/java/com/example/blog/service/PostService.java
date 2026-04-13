@@ -6,20 +6,18 @@ import com.example.blog.dto.PostResponse;
 import com.example.blog.exception.ResourceNotFoundException;
 import com.example.blog.exception.UnauthorizedActionException;
 import com.example.blog.mapper.PostMapper;
+import com.example.blog.model.Category;
 import com.example.blog.model.Post;
 import com.example.blog.model.PostStatus;
 import com.example.blog.model.User;
+import com.example.blog.repository.CategoryRepository;
 import com.example.blog.repository.CommentRepository;
 import com.example.blog.repository.PostRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.security.InvalidParameterException;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,17 +28,22 @@ public class PostService {
     private final UserService userService;
     private final S3Service s3Service;
     private final CommentRepository commentRepository;
+    private final CategoryRepository categoryRepository;
 
 
     //create post
     public PostResponse savePost(PostRequest postRequest, String email) {
         User user = userService.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        Category category = categoryRepository.findById(postRequest.getCategoryId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Category not found with id: " + postRequest.getCategoryId()));
         Post post = postMapper.toEntity(postRequest);
         post.setUser(user);
+        post.setCategory(category);
         Post savedPost = postRepository.save(post);
-        PostResponse postResponse = postMapper.toResponse(savedPost);
-        return postResponse;
+
+        return postMapper.toResponse(savedPost);
     }
 
     //get post by id
@@ -63,12 +66,21 @@ public class PostService {
 
     //update post
     public PostResponse updatePost(Long id, PostRequest postRequest, String email) {
-        Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post Not Found for the post id " + id));
+        Post post = postRepository.findById(id).orElseThrow(() ->
+                new ResourceNotFoundException("Post Not Found for the post id " + id));
         if (!post.getUser().getEmail().equals(email)) {
             throw new UnauthorizedActionException("You can only modify your own posts!");
         }
+        Category category = categoryRepository.findById(postRequest.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + postRequest.getCategoryId()));
+        post.setCategory(category);
+
+        if (postRequest.getStatus() == null) {
+            post.setStatus(PostStatus.PUBLISHED);
+        }
+
         postMapper.updateEntityFromDto(postRequest, post);
-        post.setStatus(PostStatus.valueOf(postRequest.getStatus()));
+        post.setStatus(PostStatus.valueOf(postRequest.getStatus().name()));
 
         Post savedPost = postRepository.save(post);
         return postMapper.toResponse(savedPost);

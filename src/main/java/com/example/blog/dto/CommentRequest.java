@@ -1,5 +1,6 @@
 package com.example.blog.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Getter
@@ -9,7 +10,8 @@ import lombok.*;
 @AllArgsConstructor
 public class CommentRequest {
     private Long postId;
-    private Long userId;
+
+    @NotBlank(message = "Comment cannot be empty")
     private String body;
     private String parentId;
 }
