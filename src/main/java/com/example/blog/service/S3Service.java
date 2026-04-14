@@ -26,8 +26,13 @@ public class S3Service {
     private String  region;
 
     public String uploadFile(MultipartFile file) throws IOException{
-        String filenameExtension = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".")+1);
-        String key = UUID.randomUUID().toString()+"."+filenameExtension;
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.contains(".")) {
+            throw new IOException("Invalid file: missing filename or extension");
+        }
+        String filenameExtension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1);
+        String key = UUID.randomUUID().toString() + "." + filenameExtension;
+
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(key)

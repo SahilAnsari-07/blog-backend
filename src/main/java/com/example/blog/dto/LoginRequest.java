@@ -1,5 +1,6 @@
 package com.example.blog.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -10,7 +11,9 @@ import lombok.*;
 @AllArgsConstructor
 public class LoginRequest {
     @NotBlank(message = "Enter Email")
+    @Email(message = "Enter a valid Email")
     private String email;
+
     @NotBlank(message = "Enter password")
     private String password;
 }

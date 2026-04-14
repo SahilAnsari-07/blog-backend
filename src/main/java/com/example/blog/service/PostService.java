@@ -13,9 +13,13 @@ import com.example.blog.model.User;
 import com.example.blog.repository.CategoryRepository;
 import com.example.blog.repository.CommentRepository;
 import com.example.blog.repository.PostRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 
 import java.util.List;
 
@@ -34,11 +38,15 @@ public class PostService {
     //create post
     public PostResponse savePost(PostRequest postRequest, String email) {
         User user = userService.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Category category = categoryRepository.findById(postRequest.getCategoryId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Category not found with id: " + postRequest.getCategoryId()));
         Post post = postMapper.toEntity(postRequest);
+        PostStatus status = postRequest.getStatus() != null
+                ? postRequest.getStatus()
+                : PostStatus.PUBLISHED;
+        post.setStatus(status);
         post.setUser(user);
         post.setCategory(category);
         Post savedPost = postRepository.save(post);
@@ -53,9 +61,10 @@ public class PostService {
     }
 
     //get all post
-    public List<PostResponse> findAllPosts() {
-        List<Post> posts = postRepository.findAll();
-        return posts.stream().map(postMapper::toResponse).toList();
+    public Page<PostResponse> findAllPosts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> posts = postRepository.findAllPosts(pageable);
+        return posts.map(postMapper::toResponse);
     }
 
     //get post by user id
@@ -75,12 +84,13 @@ public class PostService {
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + postRequest.getCategoryId()));
         post.setCategory(category);
 
-        if (postRequest.getStatus() == null) {
-            post.setStatus(PostStatus.PUBLISHED);
-        }
-
         postMapper.updateEntityFromDto(postRequest, post);
-        post.setStatus(PostStatus.valueOf(postRequest.getStatus().name()));
+
+        PostStatus status = postRequest.getStatus() != null
+                ? postRequest.getStatus()
+                : PostStatus.PUBLISHED;
+        post.setStatus(status);
+
 
         Post savedPost = postRepository.save(post);
         return postMapper.toResponse(savedPost);
@@ -88,10 +98,12 @@ public class PostService {
 
     }
 
-    public List<PostResponse> findPublishedPost() {
-        List<Post> publishedPost = postRepository.findByStatus(PostStatus.PUBLISHED);
-        return publishedPost.stream().map(postMapper::toResponse).toList();
+    public Page<PostResponse> findPublishedPost(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> publishedPost = postRepository.findByStatus(PostStatus.PUBLISHED, pageable);
+        return publishedPost.map(postMapper::toResponse);
     }
+
     @Transactional
     public void deletePost(Long id, String email) {
         Post post = postRepository.findById(id).orElseThrow(() ->
@@ -99,12 +111,16 @@ public class PostService {
         if (!post.getUser().getEmail().equals(email)) {
             throw new UnauthorizedActionException("You can only modify your own posts!");
         }
+        // Delete comments first (same MySQL transaction, fully atomic now!)
+        commentRepository.deleteByPostId(post.getId());
+        postRepository.deleteById(id);
+
+        // S3 cleanup (outside transaction — best effort)
         if (post.getImageUrl() != null) {
             s3Service.deleteFile(post.getImageUrl());
         }
-        commentRepository.deleteByPostId(post.getId());
-        postRepository.deleteById(id);
     }
+
 
 
 }
