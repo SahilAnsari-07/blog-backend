@@ -6,10 +6,7 @@ import com.example.blog.dto.PostResponse;
 import com.example.blog.exception.ResourceNotFoundException;
 import com.example.blog.exception.UnauthorizedActionException;
 import com.example.blog.mapper.PostMapper;
-import com.example.blog.model.Category;
-import com.example.blog.model.Post;
-import com.example.blog.model.PostStatus;
-import com.example.blog.model.User;
+import com.example.blog.model.*;
 import com.example.blog.repository.CategoryRepository;
 import com.example.blog.repository.CommentRepository;
 import com.example.blog.repository.PostRepository;
@@ -73,13 +70,19 @@ public class PostService {
         return posts.stream().map(postMapper::toResponse).toList();
     }
 
+
     //update post
     public PostResponse updatePost(Long id, PostRequest postRequest, String email) {
         Post post = postRepository.findById(id).orElseThrow(() ->
                 new ResourceNotFoundException("Post Not Found for the post id " + id));
-        if (!post.getUser().getEmail().equals(email)) {
+
+        // Admin can edit any post, regular users only their own
+        User currentUser = userService.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (!post.getUser().getEmail().equals(email) && currentUser.getRole() != UserRole.ROLE_ADMIN) {
             throw new UnauthorizedActionException("You can only modify your own posts!");
         }
+
         Category category = categoryRepository.findById(postRequest.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + postRequest.getCategoryId()));
         post.setCategory(category);
@@ -91,12 +94,10 @@ public class PostService {
                 : PostStatus.PUBLISHED;
         post.setStatus(status);
 
-
         Post savedPost = postRepository.save(post);
         return postMapper.toResponse(savedPost);
-
-
     }
+
 
     public Page<PostResponse> findPublishedPost(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -108,9 +109,14 @@ public class PostService {
     public void deletePost(Long id, String email) {
         Post post = postRepository.findById(id).orElseThrow(() ->
                 new ResourceNotFoundException("Post Not Found for the post id " + id));
-        if (!post.getUser().getEmail().equals(email)) {
+
+        // Admin can delete any post, regular users only their own
+        User currentUser = userService.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (!post.getUser().getEmail().equals(email) && currentUser.getRole() != UserRole.ROLE_ADMIN) {
             throw new UnauthorizedActionException("You can only modify your own posts!");
         }
+
         // Delete comments first (same MySQL transaction, fully atomic now!)
         commentRepository.deleteByPostId(post.getId());
         postRepository.deleteById(id);
@@ -120,6 +126,7 @@ public class PostService {
             s3Service.deleteFile(post.getImageUrl());
         }
     }
+
 
 
 
